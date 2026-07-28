@@ -1,3 +1,5 @@
+import functools
+import inspect
 from timeit import default_timer
 from types import TracebackType
 from typing import (
@@ -26,6 +28,15 @@ class ExceptionCounter:
         return False
 
     def __call__(self, f: "F") -> "F":
+        if inspect.iscoroutinefunction(f) or (
+            hasattr(f, '__call__') and inspect.iscoroutinefunction(f.__call__)
+        ):
+            @functools.wraps(f)
+            async def async_wrapped(*args: Any, **kwargs: Any) -> Any:
+                with self:
+                    return await f(*args, **kwargs)
+            return async_wrapped  # type: ignore
+
         def wrapped(func, *args, **kwargs):
             with self:
                 return func(*args, **kwargs)
@@ -44,6 +55,15 @@ class InprogressTracker:
         self._gauge.dec()
 
     def __call__(self, f: "F") -> "F":
+        if inspect.iscoroutinefunction(f) or (
+            hasattr(f, '__call__') and inspect.iscoroutinefunction(f.__call__)
+        ):
+            @functools.wraps(f)
+            async def async_wrapped(*args: Any, **kwargs: Any) -> Any:
+                with self:
+                    return await f(*args, **kwargs)
+            return async_wrapped  # type: ignore
+
         def wrapped(func, *args, **kwargs):
             with self:
                 return func(*args, **kwargs)
@@ -74,6 +94,15 @@ class Timer:
         self._metric = self._metric.labels(*args, **kw)
 
     def __call__(self, f: "F") -> "F":
+        if inspect.iscoroutinefunction(f) or (
+            hasattr(f, '__call__') and inspect.iscoroutinefunction(f.__call__)
+        ):
+            @functools.wraps(f)
+            async def async_wrapped(*args: Any, **kwargs: Any) -> Any:
+                with self._new_timer():
+                    return await f(*args, **kwargs)
+            return async_wrapped  # type: ignore
+
         def wrapped(func, *args, **kwargs):
             # Obtaining new instance of timer every time
             # ensures thread safety and reentrancy.

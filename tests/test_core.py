@@ -90,6 +90,35 @@ class TestCounter(unittest.TestCase):
             pass
         self.assertEqual(1, self.registry.get_sample_value('c_total'))
 
+    def test_async_function_decorator(self):
+        import asyncio
+
+        @self.counter.count_exceptions(ValueError)
+        async def f(r):
+            if r:
+                raise ValueError
+            else:
+                raise TypeError
+
+        async def run():
+            try:
+                await f(False)
+            except TypeError:
+                pass
+            self.assertEqual(0, self.registry.get_sample_value('c_total'))
+
+            try:
+                await f(True)
+            except ValueError:
+                pass
+            self.assertEqual(1, self.registry.get_sample_value('c_total'))
+
+        loop = asyncio.new_event_loop()
+        try:
+            loop.run_until_complete(run())
+        finally:
+            loop.close()
+
     def test_block_decorator(self):
         with self.counter.count_exceptions():
             pass
@@ -211,6 +240,24 @@ class TestGauge(unittest.TestCase):
         f()
         self.assertEqual(0, self.registry.get_sample_value('g'))
 
+    def test_inprogress_async_function_decorator(self):
+        import asyncio
+        self.assertEqual(0, self.registry.get_sample_value('g'))
+
+        @self.gauge.track_inprogress()
+        async def f():
+            self.assertEqual(1, self.registry.get_sample_value('g'))
+
+        async def run():
+            await f()
+            self.assertEqual(0, self.registry.get_sample_value('g'))
+
+        loop = asyncio.new_event_loop()
+        try:
+            loop.run_until_complete(run())
+        finally:
+            loop.close()
+
     def test_inprogress_block_decorator(self):
         self.assertEqual(0, self.registry.get_sample_value('g'))
         with self.gauge.track_inprogress():
@@ -242,6 +289,24 @@ class TestGauge(unittest.TestCase):
 
         f()
         self.assertNotEqual(0, self.registry.get_sample_value('g'))
+
+    def test_time_async_function_decorator(self):
+        import asyncio
+        self.assertEqual(0, self.registry.get_sample_value('g'))
+
+        @self.gauge.time()
+        async def f():
+            await asyncio.sleep(.001)
+
+        async def run():
+            await f()
+            self.assertNotEqual(0, self.registry.get_sample_value('g'))
+
+        loop = asyncio.new_event_loop()
+        try:
+            loop.run_until_complete(run())
+        finally:
+            loop.close()
 
     def test_function_decorator_multithread(self):
         self.assertEqual(0, self.registry.get_sample_value('g'))
