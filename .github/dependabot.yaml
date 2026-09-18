@@ -1,0 +1,49 @@
+version: 2
+updates:
+  # Maintain GitHub Actions dependencies
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+    open-pull-requests-limit: 10
+    labels:
+      - "ci"
+      - "dependencies"
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+
+  # Maintain Python package dependencies
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "07:00"
+    open-pull-requests-limit: 10
+    labels:
+      - "python"
+      - "dependencies"
+    groups:
+      dev-dependencies:
+        patterns:
+          - "pytest*"
+          - "flake8*"
+          - "mypy*"
+          - "isort*"
+          - "coverage*"
+
+  # Maintain Dockerfile base images and dependencies
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "08:00"
+    open-pull-requests-limit: 5
+    labels:
+      - "docker"
+      - "dependencies"
