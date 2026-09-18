@@ -4,6 +4,11 @@ on:
   push:
     branches: [ master ]
   pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/master' }}
 
 permissions:
   contents: read
@@ -11,12 +16,14 @@ permissions:
 jobs:
   flake8_lint:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
       - name: Set up Python
         uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548 # v6.1.0
         with:
           python-version: '3.9'
+          cache: 'pip'
       - name: Install tox
         run: pip install tox
       - name: Run flake8
@@ -24,12 +31,14 @@ jobs:
 
   isort_lint:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
       - name: Set up Python
         uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548 # v6.1.0
         with:
           python-version: '3.9'
+          cache: 'pip'
       - name: Install tox
         run: pip install tox
       - name: Run isort
@@ -37,12 +46,14 @@ jobs:
 
   mypy_lint:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
       - name: Set up Python
         uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548 # v6.1.0
         with:
           python-version: '3.9'
+          cache: 'pip'
       - name: Install tox
         run: pip install tox
       - name: Run mypy
@@ -50,7 +61,9 @@ jobs:
 
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     strategy:
+      fail-fast: false
       matrix:
         python-version: ['3.9', '3.10', '3.11', '3.12', '3.13', '3.14']
     steps:
@@ -59,6 +72,7 @@ jobs:
         uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548 # v6.1.0
         with:
           python-version: ${{ matrix.python-version }}
+          cache: 'pip'
       - name: Install dependencies
         run: |
           pip install --user tox "virtualenv<20.22.0"
@@ -77,6 +91,7 @@ jobs:
 
   test_nooptionals:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     env:
       PYTHON_VERSION: '3.9'
     steps:
@@ -85,6 +100,7 @@ jobs:
         uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548 # v6.1.0
         with:
           python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
       - name: Install tox
         run: pip install tox
       - name: Run tests without optional dependencies
@@ -94,6 +110,7 @@ jobs:
 
   test_pypy:
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     env:
       PYTHON_VERSION: '3.9'
     steps:
@@ -111,14 +128,15 @@ jobs:
 
   test_windows:
     runs-on: windows-latest
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
       - name: Set up Python
         uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548 # v6.1.0
         with:
           python-version: '3.12'
+          cache: 'pip'
       - name: Install dependencies
         run: pip install tox "virtualenv<20.22.0"
       - name: Run tests
         run: python -m tox -e py3.12
-
