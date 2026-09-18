@@ -29,6 +29,7 @@ wheels/
 *.egg
 
 # Testing & Coverage
+tests/
 .tox/
 .nox/
 .coverage
