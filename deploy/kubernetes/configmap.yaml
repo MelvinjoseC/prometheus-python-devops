@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-python-config
+  namespace: monitoring-apps
+  labels:
+    app.kubernetes.io/name: prometheus-python-app
+data:
+  APP_ENV: "production"
+  PORT: "8000"
+  WORKERS: "4"
