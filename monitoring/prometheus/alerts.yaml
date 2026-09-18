@@ -1,0 +1,63 @@
+groups:
+  - name: prometheus_python_app_alerts
+    rules:
+      - alert: TargetDown
+        expr: up{job="prometheus-python-app"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          tier: platform
+        annotations:
+          summary: "Prometheus Python target instance is unreachable"
+          description: "Instance {{ $labels.instance }} of job {{ $labels.job }} has been down for more than 1 minute."
+          runbook_url: "https://github.com/MelvinjoseC/client_python/blob/master/DEVOPS.md#runbook-targetdown"
+
+      - alert: HighErrorRate
+        expr: |
+          (
+            sum(rate(http_requests_total{status=~"5.."}[2m]))
+            /
+            sum(rate(http_requests_total[2m]))
+          ) * 100 > 5
+        for: 2m
+        labels:
+          severity: warning
+          tier: application
+        annotations:
+          summary: "High HTTP 5xx error rate detected (> 5%)"
+          description: "HTTP 5xx error rate is currently at {{ $value | printf '%.2f' }}% on endpoint {{ $labels.endpoint }}."
+          runbook_url: "https://github.com/MelvinjoseC/client_python/blob/master/DEVOPS.md#runbook-higherrorrate"
+
+      - alert: HighLatencyP99
+        expr: |
+          histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket[5m])) by (le, endpoint)) > 0.5
+        for: 3m
+        labels:
+          severity: warning
+          tier: application
+        annotations:
+          summary: "High P99 latency breach (> 500ms)"
+          description: "P99 latency on endpoint {{ $labels.endpoint }} is {{ $value | printf '%.3f' }}s, violating SLO."
+          runbook_url: "https://github.com/MelvinjoseC/client_python/blob/master/DEVOPS.md#runbook-highlatency"
+
+      - alert: ProcessHighMemoryUsage
+        expr: process_resident_memory_bytes{job="prometheus-python-app"} > 524288000
+        for: 5m
+        labels:
+          severity: warning
+          tier: infrastructure
+        annotations:
+          summary: "Python process resident memory exceeds 500MB"
+          description: "Process on {{ $labels.instance }} is consuming {{ $value | humanize1024 }}B memory."
+          runbook_url: "https://github.com/MelvinjoseC/client_python/blob/master/DEVOPS.md#runbook-highmemory"
+
+      - alert: UnhandledExceptionsSpike
+        expr: sum(rate(app_exceptions_total[2m])) > 1
+        for: 1m
+        labels:
+          severity: critical
+          tier: application
+        annotations:
+          summary: "Unhandled exception spike in application"
+          description: "Exception {{ $labels.exception_type }} is occurring at rate {{ $value | printf '%.2f' }}/sec."
+          runbook_url: "https://github.com/MelvinjoseC/client_python/blob/master/DEVOPS.md#runbook-exceptions"
