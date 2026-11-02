@@ -2,7 +2,7 @@
 # ==============================================================================
 
 # Stage 1: Build stage
-FROM python:3.12-slim AS builder
+FROM python:3.13-slim AS builder
 
 WORKDIR /build
 
@@ -25,7 +25,7 @@ RUN pip install --upgrade pip && \
     pip install --no-cache-dir /build
 
 # Stage 2: Minimal hardened runtime image
-FROM python:3.12-slim AS runner
+FROM python:3.13-slim AS runner
 
 # Set standardized container environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
